@@ -1,0 +1,87 @@
+
+function px() {
+    if [[ ! -d ~/.px ]]
+    then
+        mkdir ~/.px
+    fi
+    px_home=$(\ls -d ~/.px)
+
+    command="$1"
+    case "$command" in
+        set)
+            __px_set $2
+            ;;
+        add)
+            __px_add $2
+            ;;
+        *)
+            if [[ "X" == "X$command" ]]
+            then
+                __px_usage
+            else
+                echo "Command \"$command\" is not reconized."
+            fi
+            ;;
+    esac
+}
+
+function __px_usage() {
+    echo <<EOF
+
+px list
+
+px set rakudo
+px add ~/perl6/rakudo-star-2012.06/bin
+px add ~/perl6/rakudo-star-2012.07/bin
+
+px set perl5
+px add ~/perl5/perl-5.16/bin
+px add ~/perl5/perl-5.17/bin
+
+px activate rakudo-star-2012.06
+px activate rakudo-star-2012.07 # fail because one of items in rakudo set is already activaated
+px deactivate rakudo-star-2012.06
+px deactivate rakudo
+px activate rakudo
+
+px use rakudo-star-2012.08 # implies deactivate the currently activated item in rakudo set
+px use rakudo-star-2012.07
+
+px info
+EOF
+}
+
+function __px_set() {
+    name=$1
+    if [[ -z "$name" ]]
+    then
+        echo "Need a name"
+        exit 1
+    fi
+
+    px_selected_set=$name
+
+    echo "px: selected the set $name"
+}
+
+function __px_add() {
+    bin=$1
+    
+    if [[ (-z "$bin") || (! -d "$bin") ]]
+    then
+        echo "Need a bin/ dir"
+        exit 1
+    fi
+    
+    if [[ -z "$px_selected_set" ]]
+    then
+        echo "Need to select set: px set rakudo"
+        exit 1
+    fi
+
+    mkdir -p "~/.px/sets"
+
+    bin=$(\ls -d $bin)
+    echo $bin >> ~/.px/sets/${px_selected_set}
+    echo "px: [rakudo] added $bin"
+}
