@@ -20,4 +20,3 @@ px activate rakudo
 px use rakudo-star-2012.08 # implies deactivate the currently activated item in rakudo set
 px use rakudo-star-2012.07
 
-px info

@@ -8,26 +8,37 @@ function px() {
 
     command="$1"
     case "$command" in
-        set)
+        (set)
             __px_set $2
             ;;
-        add)
+
+        (add)
             __px_add $2
             ;;
-        activate)
+
+        (activate)
             __px_activate $2
             ;;
 
-        deactivate)
+        (deactivate)
             __px_deactivate $2
             ;;
 
-        list)
+        (use)
+            __px_use $2
+            ;;
+
+        (list)
             __px_list
             ;;
-        *)
-            if [[ "X" == "X$command" ]]
-            then
+        
+
+        (help)
+            __px_usage
+            ;;
+
+        (*)
+            if [[ -z "$1" ]]; then
                 __px_usage
             else
                 echo "Command \"$command\" is not reconized."
@@ -37,7 +48,7 @@ function px() {
 }
 
 function __px_usage() {
-    echo <<EOF
+    tee <<'EOF'
 
 px list
 
@@ -50,23 +61,25 @@ px add ~/perl5/perl-5.16/bin
 px add ~/perl5/perl-5.17/bin
 
 # px activate = prepend to $PATH
+px set rakudo
 px activate rakudo-star-2012.06
 px activate rakudo-star-2012.07
-px activate rakudo
+px activate 2012.07
 
 # px deactivate = remove from $PATH
+px set rakudo
 px deactivate rakudo-star-2012.06
 
-# use = activae one, deactivate others.
+# use = activae one, deactivate others in the same set.
+px set rakudo
 px use rakudo-star-2012.08 # implies deactivate the currently activated item in rakudo set
 px use rakudo-star-2012.07
 
-px info
 EOF
 }
 
 function __px_set() {
-    name=$1
+    local name=$1
     if [[ -z "$name" ]]
     then
         echo "Need a name"
@@ -79,7 +92,7 @@ function __px_set() {
 }
 
 function __px_add() {
-    bin=$1
+    local bin=$1
     
     if [[ (-z "$bin") || (! -d "$bin") ]]
     then
@@ -93,7 +106,7 @@ function __px_add() {
         return
     fi
 
-    mkdir -p "~/.px/sets"
+    mkdir -p ~/.px/sets
 
     bin=$(\ls -d $bin)
     echo $bin >> ~/.px/sets/${px_selected_set}
@@ -101,7 +114,7 @@ function __px_add() {
 }
 
 function __px_activate() {
-    name=$1
+    local name=$1
     if [[ -z "$name" ]]
     then
         echo "Need a name"
@@ -114,9 +127,10 @@ function __px_activate() {
         return
     fi
 
+    local p=""
     for p in $(\cat ~/.px/sets/${px_selected_set} | \grep $name)
     do
-        echo "Append: $p"
+        echo "Activate: $p"
         export PATH=$PATH:$p
     done
 
@@ -124,7 +138,7 @@ function __px_activate() {
 }
 
 function __px_deactivate() {
-    name=$1
+    local name=$1
     if [[ -z "$name" ]]
     then
         echo "Need a name"
@@ -137,12 +151,14 @@ function __px_deactivate() {
         return
     fi
 
-    pp=$PATH
+    local p=""
+    local pp=$PATH
     for p in $(\cat ~/.px/sets/${px_selected_set} | \grep $name)
     do
         pp=$(echo $pp|\perl -lne "chomp; print join ':',grep { \$_ ne '$p' } split /:/, \$_")
         echo "px: [$px_selected_set] deactivate $p"
     done
+
     export PATH=$pp
     hash -r
 }
@@ -154,4 +170,30 @@ function __px_list() {
         cat $set
         echo
     done
+}
+
+function __px_use() {
+    local name=$1
+    if [[ -z "$name" ]]
+    then
+        echo "Need a name"
+        return
+    fi
+
+    if [[ -z "$px_selected_set" ]]
+    then
+        echo "Need to select set: px set rakudo"
+        return
+    fi
+
+
+    local p=""
+    for p in $(\cat ~/.px/sets/${px_selected_set})
+    do
+        __px_deactivate "$p"
+    done
+
+    __px_activate "$name"
+
+    hash -r
 }
