@@ -14,6 +14,17 @@ function px() {
         add)
             __px_add $2
             ;;
+        activate)
+            __px_activate $2
+            ;;
+
+        deactivate)
+            __px_deactivate $2
+            ;;
+
+        list)
+            __px_list
+            ;;
         *)
             if [[ "X" == "X$command" ]]
             then
@@ -38,12 +49,15 @@ px set perl5
 px add ~/perl5/perl-5.16/bin
 px add ~/perl5/perl-5.17/bin
 
+# px activate = prepend to $PATH
 px activate rakudo-star-2012.06
-px activate rakudo-star-2012.07 # fail because one of items in rakudo set is already activaated
-px deactivate rakudo-star-2012.06
-px deactivate rakudo
+px activate rakudo-star-2012.07
 px activate rakudo
 
+# px deactivate = remove from $PATH
+px deactivate rakudo-star-2012.06
+
+# use = activae one, deactivate others.
 px use rakudo-star-2012.08 # implies deactivate the currently activated item in rakudo set
 px use rakudo-star-2012.07
 
@@ -56,12 +70,12 @@ function __px_set() {
     if [[ -z "$name" ]]
     then
         echo "Need a name"
-        exit 1
+        return
     fi
 
     px_selected_set=$name
 
-    echo "px: selected the set $name"
+    echo "px: [$px_selected_set] selected"
 }
 
 function __px_add() {
@@ -70,18 +84,74 @@ function __px_add() {
     if [[ (-z "$bin") || (! -d "$bin") ]]
     then
         echo "Need a bin/ dir"
-        exit 1
+        return
     fi
     
     if [[ -z "$px_selected_set" ]]
     then
         echo "Need to select set: px set rakudo"
-        exit 1
+        return
     fi
 
     mkdir -p "~/.px/sets"
 
     bin=$(\ls -d $bin)
     echo $bin >> ~/.px/sets/${px_selected_set}
-    echo "px: [rakudo] added $bin"
+    echo "px: [$px_selected_set] added $bin"
+}
+
+function __px_activate() {
+    name=$1
+    if [[ -z "$name" ]]
+    then
+        echo "Need a name"
+        return
+    fi
+
+    if [[ -z "$px_selected_set" ]]
+    then
+        echo "Need to select set: px set rakudo"
+        return
+    fi
+
+    for p in $(\cat ~/.px/sets/${px_selected_set} | \grep $name)
+    do
+        echo "Prepend: $p"
+        export PATH=$p:${PATH}
+    done
+
+    hash -r
+}
+
+function __px_deactivate() {
+    name=$1
+    if [[ -z "$name" ]]
+    then
+        echo "Need a name"
+        return
+    fi
+
+    if [[ -z "$px_selected_set" ]]
+    then
+        echo "Need to select set: px set rakudo"
+        return
+    fi
+
+    pp=$PATH
+    for p in $(\cat ~/.px/sets/${px_selected_set} | \grep $name)
+    do
+        pp=$(echo $pp|\perl -lne "chomp; print join ':',grep { \$_ ne '$p' } split /:/, \$_")
+        echo "px: [$px_selected_set] deactivate $p"
+    done
+    export PATH=$pp
+    hash -r
+}
+
+function __px_list() {
+    for set in ~/.px/sets/*
+    do
+        echo "# ["$(basename $set)"]"
+        cat $set
+        echo
+    done
 }
