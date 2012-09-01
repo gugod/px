@@ -116,8 +116,8 @@ function __px_activate() {
 
     for p in $(\cat ~/.px/sets/${px_selected_set} | \grep $name)
     do
-        echo "Prepend: $p"
-        export PATH=$p:${PATH}
+        echo "Append: $p"
+        export PATH=$PATH:$p
     done
 
     hash -r
