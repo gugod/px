@@ -20,3 +20,12 @@ px activate rakudo
 px use rakudo-star-2012.08 # implies deactivate the currently activated item in rakudo set
 px use rakudo-star-2012.07
 
+## INSTALLATION
+
+    git clone https://github.com/gugod/px.git ~/.px/px
+    if [[ "zsh" = $(basename $SHELL) ]]; then
+        echo "source ~/.px/px/px" >> ~/.zprofile
+    fi
+    if [[ "bash" = $(basename $SHELL) ]]; then
+        echo "source ~/.px/px/px" >> ~/.bash_profile
+    fi
