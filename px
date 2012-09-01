@@ -82,13 +82,17 @@ function __px_set() {
     local name=$1
     if [[ -z "$name" ]]
     then
-        echo "Need a name"
+        if [[ -z "$px_selected_set" ]]; then
+            echo "Need a name"
+        else
+            echo "px: {$px_selected_set} was selected"
+        fi
         return
     fi
 
     px_selected_set=$name
 
-    echo "px: [$px_selected_set] selected"
+    echo "px{$px_selected_set} is selected"
 }
 
 function __px_add() {
@@ -110,7 +114,7 @@ function __px_add() {
 
     bin=$(\ls -d $bin)
     echo $bin >> ~/.px/sets/${px_selected_set}
-    echo "px: [$px_selected_set] added $bin"
+    echo "px{$px_selected_set} added $bin"
 }
 
 function __px_activate() {
@@ -130,7 +134,7 @@ function __px_activate() {
     local p=""
     for p in $(\cat ~/.px/sets/${px_selected_set} | \grep $name)
     do
-        echo "Activate: $p"
+        echo "px{$px_selected_set} activate $p"
         export PATH=$PATH:$p
     done
 
@@ -156,7 +160,7 @@ function __px_deactivate() {
     for p in $(\cat ~/.px/sets/${px_selected_set} | \grep $name)
     do
         pp=$(echo $pp|\perl -lne "chomp; print join ':',grep { \$_ ne '$p' } split /:/, \$_")
-        echo "px: [$px_selected_set] deactivate $p"
+        echo "px{$px_selected_set} deactivate $p"
     done
 
     export PATH=$pp
